@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Hash;
 use Illuminate\Http\Request;
 use DB;
 use Auth;
-use App\Models\User;
-use Log;
 
 class RegisterController extends Controller
 {
@@ -24,7 +21,7 @@ class RegisterController extends Controller
             'phone' => 'required|max:15',
         ]);
 
-        $insertMembData = DB::table('MEMB_INFO')->insertGetId([
+        $created = DB::table('MEMB_INFO')->insert([
             'memb___id'=>$request->username1,
             'memb__pwd'=>$request->password1,
             'memb_name'=>$request->name,
@@ -35,21 +32,11 @@ class RegisterController extends Controller
             'sno__numb'=>$request->userCode,
             'bloc_code'=>0,
             'mail_chek'=>0,
-            'phon_numb'=> $request->phone,
+            'sno__numb'=> $request->phone,
         ]);
 
-        if($insertMembData){
-            $user = User::create([
-                'id'=> $insertMembData,
-                'username'=>$request->username1,
-                'password'=>Hash::make($request->password1),
-                'name'=>$request->name,
-                'created_at'=>now(),
-            ]);
-        }
-
-        if($user){
-            return redirect()->route('home')->with('success', "Conta {$user->name} criada com sucesso!");
+        if($created){
+            return redirect()->route('home')->with('success', "Conta {$request->name} criada com sucesso!");
         }else{
             return redirect()->back()->with("error",'Houve um erro no cadastro');
         }

@@ -10,6 +10,15 @@
     <button type="submit">Upload</button>
 </form>
 
+<section class="admin-action-panel">
+    <h2>Desconectar jogador</h2>
+    <form action="{{ route('admin.players.disconnect') }}" method="POST">
+        @csrf
+        <input type="text" name="username" placeholder="Conta do jogador" maxlength="20" required>
+        <button type="submit">Desconectar</button>
+    </form>
+</section>
+
 @if (isset($csvData))
 <table class="comparison-table">
     <thead>

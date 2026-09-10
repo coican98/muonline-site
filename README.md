@@ -96,6 +96,22 @@ ________________________________________________________________________________
 
 Este projeto é um site totalmente funcional desenvolvido usando **PHP**, **Laravel** e **JavaScript** para um **servidor privado de MU Online**. O site oferece aos usuários acesso a conteúdos relacionados ao servidor, incluindo rankings, gerenciamento de contas e informações de eventos, além de integração para que administradores gerenciem o servidor por meio do frontend.
 
+## Executar localmente
+
+1. Instale o PHP 8.2+, o Composer, o driver `pdo_sqlsrv` do PHP e o Microsoft ODBC Driver for SQL Server.
+2. Copie `.env.example` para `.env` e preencha `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` com os dados do SQL Server do servidor.
+3. Execute:
+
+```text
+composer install
+php artisan key:generate
+php artisan migrate --path=database/migrations/2024_09_05_130834_create_site_credentials_table.php
+php artisan sync:site-credentials
+php artisan serve
+```
+
+O site ficará disponível em `http://127.0.0.1:8000`. A migration específica cria somente a tabela `siteCredentials`; as tabelas do jogo, como `MEMB_INFO`, devem existir previamente no banco do servidor.
+
 ## Visão Geral do Layout
 O site possui um **cabeçalho fixo** com navegação, um **menu lateral** para login e detalhes do servidor, e um **rodapé** com links sociais. As páginas são projetadas para fornecer informações essenciais aos jogadores, garantindo um layout responsivo e visualmente atraente.
 

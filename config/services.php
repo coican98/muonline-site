@@ -2,6 +2,12 @@
 
 return [
 
+    'join_server' => [
+        'host' => env('JOIN_SERVER_HOST', '127.0.0.1'),
+        'port' => env('JOIN_SERVER_PORT', 55970),
+        'team' => env('MU_SERVER_TEAM', 'muemu'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

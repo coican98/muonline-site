@@ -23,7 +23,9 @@ function getNextSaturday() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    let isFetching;
+    let isFetching = false;
+    let countdownTimer;
+
     function getUpdatedEventTimes() {
         if (isFetching) return;
         isFetching = true;
@@ -42,50 +44,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error fetching event HTML:', error);
             })
             .finally(() => {
-                setTimeout(isFetching = false,60000);
+                isFetching = false;
+                window.setTimeout(getUpdatedEventTimes, 60000);
             });
     }
-    function updateCountdowns() {
-        const events = document.querySelectorAll('.event-item');
-        const currentTime = new Date();
-        
-        events.forEach((event, index) => {
-            const eventTimestamp = event.querySelector('.event-timestamp').getAttribute('data-hour');
-            let eventTime = getEventTime(eventTimestamp, currentTime);
-            
-            const remainingElement = document.querySelector(`#remaining-${index}`);
-            const countdown = setInterval(() => {
-                try {
-                    const remainingTime = calculateRemainingTime(eventTime);
-                    remainingElement.textContent = remainingTime;
-    
-                    // Turn text green if less than 10 minutes remain
-                    if (remainingTime !== '00:00:00' && isLessThanTenMinutes(remainingTime)) {
-                        remainingElement.style.color = 'green';
-                    }
 
-                    // Check if event time has passed, if so, fetch new event times
-                    if (remainingTime === '00:00:00') {
-                        clearInterval(countdown);
-                        getUpdatedEventTimes();  // Fetch new event time when countdown reaches 00:00:00
-                    }
-                } catch (error) {
-                    const remainingTime = null;
-                }
-            }, 1000);
-        });
+    function updateCountdowns() {
+        if (countdownTimer) window.clearInterval(countdownTimer);
+        const render = () => {
+            const now = new Date();
+            document.querySelectorAll('.event-item').forEach(event => {
+                const timestamp = event.querySelector('.event-timestamp');
+                const remaining = event.querySelector('.event-remaining');
+                if (!timestamp || !remaining || !timestamp.dataset.hour) return;
+
+                const eventTime = getNextEventTime(timestamp.dataset.hour, timestamp.dataset.dow, now);
+                const remainingTime = calculateRemainingTime(eventTime, now);
+                remaining.textContent = remainingTime;
+                remaining.classList.toggle('event-imminent', remainingTime !== '00:00:00' && isLessThanTenMinutes(remainingTime));
+            });
+        };
+
+        render();
+        countdownTimer = window.setInterval(render, 1000);
     }
-    function getEventTime(eventTimestamp, currentTime) {
-        let [hour, minute] = eventTimestamp.split(':').map(Number);
+
+    function getNextEventTime(eventTimestamp, eventDay, currentTime) {
+        const [hour, minute] = eventTimestamp.split(':').map(Number);
         const eventDate = new Date(currentTime);
-        
-        eventDate.setHours(hour);
-        eventDate.setMinutes(minute);
-        eventDate.setSeconds(0);
+        eventDate.setHours(hour, minute, 0, 0);
+
+        const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+        const targetDay = dayNames.indexOf((eventDay || '').toLowerCase());
+        if (targetDay >= 0) {
+            eventDate.setDate(eventDate.getDate() + ((targetDay - eventDate.getDay() + 7) % 7));
+        }
+        if (eventDate <= currentTime) {
+            eventDate.setDate(eventDate.getDate() + (targetDay >= 0 ? 7 : 1));
+        }
         return eventDate;
     }
-    function calculateRemainingTime(eventTime) {
-        const now = new Date();
+
+    function calculateRemainingTime(eventTime, now) {
         const remainingMilliseconds = eventTime - now;
         if (remainingMilliseconds <= 0) return '00:00:00';
         
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hours = Math.floor(remainingSeconds / 3600);
         const minutes = Math.floor((remainingSeconds % 3600) / 60);
         const seconds = remainingSeconds % 60;
-        if(isNaN(remainingMilliseconds)) {
+        if (isNaN(remainingMilliseconds)) {
             return 'N/A';
         }
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
@@ -140,10 +140,13 @@ window.onscroll = function() {
         button.style.display = "none";
     }
 };
-document.getElementById("goToTop").onclick = function(event) {
-    event.preventDefault();
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-};
+const goToTop = document.getElementById("goToTop");
+if (goToTop) {
+    goToTop.onclick = function(event) {
+        event.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+}

@@ -18,6 +18,11 @@ return [
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
+    'admin_accounts' => array_values(array_filter(array_map(
+        'strtolower',
+        array_map('trim', explode(',', env('ADMIN_ACCOUNTS', '')))
+    ))),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards

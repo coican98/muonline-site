@@ -17,12 +17,16 @@ Route::get('/cadastro', [RegisterController::class, 'registerPage'])->name('regi
 Route::get('/downloads', [HomeController::class, 'downloads'])->name('downloads');
 Route::get('/admin', [AdminController::class,'index'])->name('admin');
 Route::post('/admin', [AdminController::class,'upload'])->name('upload');
+Route::post('/admin/players/disconnect', [AdminController::class, 'disconnectPlayer'])->name('admin.players.disconnect');
 Route::get('/removeDownloadFile/{download}', [AdminController::class,"removeDownloadFile"])->name('removeDownloadFile');
 Route::get('/loadEvents', [HomeController::class, 'loadEvents'])->name('loadEvents');
 Route::get('/rankings', [RankingsController::class, 'index'])->name('rankings');
 Route::post('/rankings', [RankingsController::class, 'searchRankings'])->name('searchRankings');
 Route::get('/vip', [VipController::class, 'index'])->name('vip');
 Route::get('/account', [AccountController::class, 'index'])->name('account');
+Route::post('/account/disconnect', [AccountController::class, 'disconnect'])->name('account.disconnect');
+Route::get('/account/settings', [AccountController::class, 'settings'])->name('account.settings');
+Route::put('/account/settings', [AccountController::class, 'updateSettings'])->name('account.settings.update');
 
 
 

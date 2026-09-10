@@ -34,7 +34,7 @@ class HomeController extends Controller
     }
     public function getEventSchedule()
     {
-    $eventsFolderPath = 'D:\Downloads\Mu Files\MuServerS6\MuServer_Season_6_Update_19\Data\Event';
+    $eventsFolderPath = 'C:\MuServer\Data\Event';
     $invasionManagerPath = $eventsFolderPath.'\InvasionManager.dat';
     $lines = file($invasionManagerPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $events = [

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Auth;
 use DB;
 
+use App\Services\PlayerDisconnectService;
 class AccountController extends Controller
 {
     public function index(){
@@ -20,6 +21,9 @@ class AccountController extends Controller
     public function getCharacters(){
         $authUser = Auth::user()->username;
         $characters = DB::table('AccountCharacter')->where('Id', $authUser)->get()->first();
+        if (!$characters) {
+            return [];
+        }
         $characterList = [$characters->GameID1,$characters->GameID2,$characters->GameID3,$characters->GameID4,$characters->GameID5];
         $characterClassCodes = [
             0=>'Dark Wizard',
@@ -72,18 +76,93 @@ class AccountController extends Controller
             195=>'Mystic Mage',
         ];
         foreach($characterList as $characterData){
+            if (!$characterData) {
+                continue;
+            }
             $characterStatus = DB::table('Character')->where('Name', $characterData)->get()->first();
             $characterMasterLevel = DB::table('MasterSkillTree')->where('Name', $characterData)->get()->first();
+            if (!$characterStatus) {
+                continue;
+            }
             $character[] = [
                 'name' => $characterStatus->Name,
                 'level' => $characterStatus->cLevel,
-                'masterlevel' => $characterMasterLevel->MasterLevel,
-                'class' => $characterClassCodes[$characterStatus->Class],
+                'masterlevel' => $characterMasterLevel->MasterLevel ?? 0,
+                'class' => $characterClassCodes[$characterStatus->Class] ?? 'Desconhecida',
                 'resets' => $characterStatus->ResetCount,
                 'masterresets' => $characterStatus->MasterResetCount,
             ];
         }
 
         return $character;
+    }
+
+    public function disconnect(Request $request, PlayerDisconnectService $disconnectService)
+    {
+        if (!Auth::check()) {
+            return redirect('/')->with('error', 'Faça login para continuar.');
+        }
+
+        try {
+            $disconnectService->disconnect(Auth::user()->username);
+            return redirect()->route('account')->with('success', 'Sua conta foi desconectada do jogo.');
+        } catch (\Throwable $exception) {
+            report($exception);
+            return redirect()->route('account')->with('error', $exception->getMessage());
+        }
+    }
+
+    public function settings()
+    {
+        return Auth::check()
+            ? view('account-settings', ['user' => Auth::user()])
+            : redirect('/')->with('error', 'Faça login para continuar.');
+    }
+
+    public function updateSettings(Request $request)
+    {
+        if (!Auth::check()) {
+            return redirect('/')->with('error', 'Faça login para continuar.');
+        }
+
+        $user = Auth::user();
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50'],
+            'personal_id' => ['required', 'string', 'max:7'],
+            'email' => ['required', 'email', 'max:255', 'unique:MEMB_INFO,mail_addr,' . $user->getKey() . ',memb_guid'],
+            'phone' => ['required', 'string', 'max:15'],
+            'current_password' => ['required', 'string'],
+            'password' => ['nullable', 'string', 'min:4', 'max:20', 'same:password_confirmation'],
+            'password_confirmation' => ['nullable', 'string'],
+        ]);
+
+        if (!hash_equals((string) $user->memb__pwd, (string) $validated['current_password'])) {
+            return back()->withErrors(['current_password' => 'A senha atual está incorreta.'])->withInput();
+        }
+
+        $data = [];
+        $changes = [
+            'memb_name' => $validated['name'],
+            'sno__numb' => $validated['personal_id'],
+            'mail_addr' => $validated['email'],
+            'tel__numb' => $validated['phone'],
+        ];
+        foreach ($changes as $column => $value) {
+            if ((string) $user->{$column} !== (string) $value) {
+                $data[$column] = $value;
+            }
+        }
+        if (!empty($validated['password'])) {
+            $data['memb__pwd'] = $validated['password'];
+        }
+
+        if ($data !== []) {
+            DB::table('MEMB_INFO')->where('memb_guid', $user->getKey())->update($data);
+        }
+        Auth::setUser($user->fresh());
+
+        return back()->with('success', $data === []
+            ? 'Nenhuma alteração foi necessária.'
+            : 'Dados da conta atualizados com sucesso.');
     }
 }

@@ -1,18 +1,18 @@
 @extends('layouts.main')
 @section('content')
 
+<section class="ranking-page">
+<div class="section-heading"><h2>Rankings</h2><span>Os nomes mais fortes do continente</span></div>
 <div class="ranking-filter">
-    <form action="{{route('searchRankings')}}" method="POST" class="register-form">
+    <form action="{{route('searchRankings')}}" method="POST" class="ranking-form">
         @csrf
         <div>
             <label for="ranking-event">Evento</label>
             <select name="ranking-event" id="ranking-event">
                 <option id="default-option" value="select" selected disabled hidden>Selecione</option>
-                <option value="1">Blood Castle</option>
-                <option value="2">Chaos Castle</option>
-                <option value="3">Devil Square</option>
-                <option value="0">Battle Royale</option>
-                <option value="6">Illusion Temple</option>
+                @foreach($rankingTypes ?? [] as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
             </select>
         </div>
         {{-- <div>
@@ -27,8 +27,10 @@
         <button id="ranking-search" type="submit" disabled>Visualizar</button>
     </form>
     @if (isset($rankingData))
+        <div class="ranking-result-title">{{ $rankingTitle ?? 'Ranking' }}</div>
         @include('partials.rankingResults')
     @endif
 </div>
+</section>
 
 @endsection

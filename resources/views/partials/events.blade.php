@@ -24,7 +24,7 @@
                     <tr class="event-item" hidden>
                 @endif
                 <td><span class="event-name">{{ $event['event'] }}</span></td>
-                <td><span class="event-timestamp" data-hour="{{ $event['time'] }}" id="timestamp-{{ $loop->index }}">
+                <td><span class="event-timestamp" data-hour="{{ $event['time'] }}" data-dow="{{ $event['dow'] ?? '*' }}" id="timestamp-{{ $loop->index }}">
                     @if($event['time'] == null)
                     N/A
                     @else

@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cookie;
 use Session;
 use DB;
+use Illuminate\Database\QueryException;
 
 class LoginController extends Controller
 {
@@ -25,17 +26,21 @@ class LoginController extends Controller
                 'password' => $request->input('password'),
             ];
 
-            $user = User::where('username', $credentials['username'])->first();
-            if ($user) {
-                if (Hash::check($credentials['password'], $user->password)) {
+            try {
+                $user = User::where('memb___id', $credentials['username'])->first();
+                if (!$user) {
+                    return redirect()->back()->with('error', 'Conta não encontrada. Favor verificar as credenciais novamente.');
+                }
 
-                    Auth::login($user, true);
-                    return redirect()->back()->with('success', '');
-                } else {
+                if (!hash_equals((string) $user->memb__pwd, (string) $credentials['password'])) {
                     return redirect()->back()->with('error', 'Senha incorreta. Favor verificar as credenciais novamente.');
                 }
-            } else {
-                return redirect()->back()->with('error', 'Conta não encontrada. Favor verificar as credenciais novamente.');
+
+                Auth::login($user, true);
+                return redirect()->back()->with('success', '');
+            } catch (QueryException $exception) {
+                report($exception);
+                return redirect()->back()->with('error', 'Não foi possível conectar ao banco do servidor. Verifique DB_HOST, DB_PORT, DB_DATABASE e DB_PASSWORD no .env.');
             }
         }
     }

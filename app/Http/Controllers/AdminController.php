@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use DB;
 use Auth;
+use App\Services\PlayerDisconnectService;
 
 class AdminController extends Controller
 {
@@ -46,6 +47,25 @@ class AdminController extends Controller
             }
         }else{
             return redirect()->back()->with('error', 'O arquivo é inválido.');
+        }
+    }
+
+    public function disconnectPlayer(Request $request, PlayerDisconnectService $disconnectService)
+    {
+        if (!(Auth::check() && Auth::user()->global_admin == 1)) {
+            return redirect('/')->with('error', 'Esta página está restrita a administradores!');
+        }
+
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_]+$/'],
+        ]);
+
+        try {
+            $disconnectService->disconnect($validated['username']);
+            return redirect()->back()->with('success', "A conta {$validated['username']} foi desconectada.");
+        } catch (\Throwable $exception) {
+            report($exception);
+            return redirect()->back()->with('error', $exception->getMessage());
         }
     }
     public function removeDownloadFile($download){

@@ -4,6 +4,13 @@
 <div class="container-main">
 @if(isset($characterData))
 <h1>Personagens</h1>
+<div class="account-action-panel">
+    <p>Está conectado ao jogo?</p>
+    <form action="{{ route('account.disconnect') }}" method="POST">
+        @csrf
+        <button type="submit">Desconectar do jogo</button>
+    </form>
+</div>
 <div class="character-container">
     @foreach ($characterData as $char)
         <div class="character-item">
