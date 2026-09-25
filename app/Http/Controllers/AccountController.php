@@ -24,7 +24,13 @@ class AccountController extends Controller
         if (!$characters) {
             return [];
         }
-        $characterList = [$characters->GameID1,$characters->GameID2,$characters->GameID3,$characters->GameID4,$characters->GameID5];
+        $characterList = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $gameId = 'GameID' . $i;
+            if (!empty($characters->$gameId)) {
+                $characterList[] = $characters->$gameId;
+            }
+        }
         $characterClassCodes = [
             0=>'Dark Wizard',
             1=>'Soul Master',
@@ -114,9 +120,27 @@ class AccountController extends Controller
 
     public function settings()
     {
-        return Auth::check()
-            ? view('account-settings', ['user' => Auth::user()])
-            : redirect('/')->with('error', 'Faça login para continuar.');
+        if (!Auth::check()) {
+            return redirect('/')->with('error', 'Faça login para continuar.');
+        }
+
+        \App\Services\ShopOrderService::ensureTableExists();
+
+        $user = Auth::user();
+        $orders = DB::table('mw_shop_orders')
+            ->where('account_id', $user->username)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $membInfo = DB::table('MEMB_INFO')->where('memb___id', $user->username)->first();
+        $shopSettings = \App\Services\ShopOrderService::getShopSettings();
+
+        return view('account-settings', [
+            'user' => $user,
+            'orders' => $orders,
+            'membInfo' => $membInfo,
+            'shopSettings' => $shopSettings,
+        ]);
     }
 
     public function updateSettings(Request $request)
