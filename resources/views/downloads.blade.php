@@ -3,16 +3,22 @@
 <table class="downloads-table">
     <thead>
         <tr>
-            <th>File Name</th>
-            <th>Download Links</th>
-            <th>Size</th>
+            <th>Nome Arquivo</th>
+            <th>Link</th>
+            <th>Tamanho do arquivo</th>
         </tr>
     </thead>
     <tbody>
         @foreach ($downloads as $download)
         <tr>
             <td>{{ $download['name'] }}</td>
-            <td><a href="{{ $download['link'] }}">Download Link</a></td>
+            <td><a href="{{ $download['link'] }}">
+                @if(str_starts_with($download['link'], env('APP_URL')))
+                    Download Direto
+                @else
+                    Download Externo
+                @endif
+                </a></td>
             <td>{{ $download['size'] }}</td>
             @if(Auth::check())
                 @if(Auth::user()->global_admin == 1)

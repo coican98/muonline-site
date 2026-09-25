@@ -3,51 +3,57 @@
 
 <div class="container-main">
 @if(isset($characterData))
-<h1>Personagens</h1>
-<div class="account-action-panel">
-    <p>Está conectado ao jogo?</p>
-    <form action="{{ route('account.disconnect') }}" method="POST">
+<div class="section-heading">
+    <h2>Meus Personagens</h2>
+    <span>Gerencie os heróis da sua conta</span>
+</div>
+
+<div class="admin-card admin-card--danger account-action-panel">
+    <h2>Conexão do Jogo</h2>
+    <p class="admin-card-desc">Você está conectado ao jogo? Desconecte para acessar alguns serviços do site.</p>
+    <form action="{{ route('account.disconnect') }}" method="POST" style="display: flex; gap: 10px;">
         @csrf
-        <button type="submit">Desconectar do jogo</button>
+        <button type="submit" class="btn-danger">Desconectar do jogo</button>
     </form>
 </div>
+
 <div class="character-container">
     @foreach ($characterData as $char)
         <div class="character-item">
-            @if($char['class'] == 'Dark Wizard' || $char['class'] == 'Soul Master' || $char['class'] == 'Grand Master' || $char['class'] == 'Soul Wizard')
-                <img src="{{asset('img/character-icons/sm.jpg')}}" alt="" class="char-icon">
-            @elseif($char['class'] == 'Dark Knight' || $char['class'] == 'Blade Knight' || $char['class'] == 'Blade Master' || $char['class'] == 'Dragon Knight')
-                <img src="{{asset('img/character-icons/bk.jpg')}}" alt="" class="char-icon">
-            @elseif($char['class'] == 'Elf' || $char['class'] == 'Muse Elf' || $char['class'] == 'High Elf' || $char['class'] == 'Noble Elf')
-                <img src="{{asset('img/character-icons/elf.jpg')}}" alt="" class="char-icon">
-            @elseif($char['class'] == 'Magic Gladiator' || $char['class'] == 'Duel Master' || $char['class'] == 'Magic Knight')
-                <img src="{{asset('img/character-icons/mg.jpg')}}" alt="" class="char-icon">
-            @elseif($char['class'] == 'Dark Lord' || $char['class'] == 'Lord Emperor' || $char['class'] == 'Empire Lord')
-                <img src="{{asset('img/character-icons/dl.jpg')}}" alt="" class="char-icon">
-            @elseif($char['class'] == 'Summoner' || $char['class'] == 'Bloody Summoner' || $char['class'] == 'Dimension Master' || $char['class'] == 'Dimension Summoner')
-                <img src="{{asset('img/character-icons/sum.jpg')}}" alt="" class="char-icon">
-            @elseif($char['class'] == 'Rage Fighter' || $char['class'] == 'Fist Master' || $char['class'] == 'Fist Blazer')
-                <img src="{{asset('img/character-icons/rf.jpg')}}" alt="" class="char-icon">
+            @if(in_array($char['class'], ['Dark Wizard', 'Soul Master', 'Grand Master', 'Soul Wizard']))
+                <img src="{{asset('img/character-icons/sm.jpg')}}" alt="Dark Wizard" class="char-icon">
+            @elseif(in_array($char['class'], ['Dark Knight', 'Blade Knight', 'Blade Master', 'Dragon Knight']))
+                <img src="{{asset('img/character-icons/bk.jpg')}}" alt="Dark Knight" class="char-icon">
+            @elseif(in_array($char['class'], ['Elf', 'Muse Elf', 'High Elf', 'Noble Elf']))
+                <img src="{{asset('img/character-icons/elf.jpg')}}" alt="Elf" class="char-icon">
+            @elseif(in_array($char['class'], ['Magic Gladiator', 'Duel Master', 'Magic Knight']))
+                <img src="{{asset('img/character-icons/mg.jpg')}}" alt="Magic Gladiator" class="char-icon">
+            @elseif(in_array($char['class'], ['Dark Lord', 'Lord Emperor', 'Empire Lord']))
+                <img src="{{asset('img/character-icons/dl.jpg')}}" alt="Dark Lord" class="char-icon">
+            @elseif(in_array($char['class'], ['Summoner', 'Bloody Summoner', 'Dimension Master', 'Dimension Summoner']))
+                <img src="{{asset('img/character-icons/sum.jpg')}}" alt="Summoner" class="char-icon">
+            @elseif(in_array($char['class'], ['Rage Fighter', 'Fist Master', 'Fist Blazer']))
+                <img src="{{asset('img/character-icons/rf.jpg')}}" alt="Rage Fighter" class="char-icon">
             @endif
-            <b><a href="#">{{$char['name']}}</a></b>
-            <div>
-                <label for="char-level">Level:</label>
-                <span>{{$char['level']}}</span>
+            
+            <div class="char-name"><a href="#">{{$char['name']}}</a></div>
+            <div class="char-class">{{$char['class']}}</div>
+            
+            <div class="char-level-group">
+                <span class="char-level-label">Level</span>
+                <span class="char-level">{{$char['level']}}</span>
             </div>
-            <div>
-                <label for="char-class">Classe:</label>
-                <span>{{$char['class']}}</span>
-            </div>
-            <div>
-                <label for="char-master-level">Master Level:</label>
+            
+            <div class="char-stat">
+                <label>Master Level:</label>
                 <span>{{$char['masterlevel']}}</span>
             </div>
-            <div>
-                <label for="char-resets">Resets:</label>
+            <div class="char-stat">
+                <label>Resets:</label>
                 <span>{{$char['resets']}}</span>
             </div>
-            <div>
-                <label for="char-master-resets">Master Resets:</label>
+            <div class="char-stat">
+                <label>Master Resets:</label>
                 <span>{{$char['masterresets']}}</span>
             </div>
         </div>
@@ -55,15 +61,10 @@
 </div>
 
 @else
-<div class="character-container">
+<div class="character-container" style="display: block; text-align: center; padding: 40px 20px;">
     <p>Está vazio aqui... Crie um personagem dentro do jogo e ele aparecerá aqui para você poder gerenciar!</p>
 </div>
 @endif
 </div>
 
-<style>
-    .account-btn{
-        font-weight: bold;
-    }
-</style>
 @endsection
