@@ -7,7 +7,7 @@
                 $isAdmin = Auth::check() && Auth::user()->global_admin == 1;
                 $isVisible = $isAdmin || ($event['enabled'] && $event['time'] !== null);
             @endphp
-            <tr class="event-item" {!! !$isVisible ? 'style="display:none;"' : '' !!}>
+            <tr class="event-item" data-enabled="{{ $event['enabled'] && $event['time'] !== null ? '1' : '0' }}" {!! !$isVisible ? 'style="display:none;"' : '' !!}>
                 <td style="padding: 7px 4px; border: none; border-bottom: 1px solid rgba(201,166,90,0.15); background: transparent;">
                     <span class="event-name" style="color: var(--gold-bright); font-weight: 700; font-family: var(--font-display); font-size: 12.5px; letter-spacing: 0.8px; text-shadow: 1px 1px 2px black;">{{ $event['event'] }}</span>
                 </td>
