@@ -55,195 +55,223 @@ class HomeController extends Controller
     public function eventsPage()
     {
         $title = 'Mu Rootz - Detalhes de Eventos';
-        $eventData = $this->getEventSchedule();
+        $eventData = \App\Services\EventScheduleService::getAllEvents();
+        $isAdmin = Auth::check() && Auth::user()->global_admin == 1;
         
-        // Filtra eventos validos
-        $validEvents = [];
+        // Filtra eventos: Admin vê todos, jogador vê apenas ativos
+        $filteredEvents = [];
         foreach ($eventData as $event) {
-            if ($event['enabled'] && isset($event['timestamp']['hour'])) {
-                $validEvents[] = $event;
+            if ($isAdmin || $event['enabled']) {
+                // Expande e ordena todos os horários cronologicamente (ex: mesclando *:18 com 14:05 e 22:05)
+                $allTimeList = [];
+                if (!empty($event['all_hours'])) {
+                    foreach ($event['all_hours'] as $hStr) {
+                        if (str_starts_with($hStr, '*:')) {
+                            $min = substr($hStr, 2);
+                            for ($h = 0; $h < 24; $h++) {
+                                $allTimeList[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $min;
+                            }
+                        } else {
+                            $allTimeList[] = $hStr;
+                        }
+                    }
+                } elseif (isset($event['timestamp']['hour']) && $event['timestamp']['hour'] === '*') {
+                    $min = str_pad($event['timestamp']['minute'] ?? '00', 2, '0', STR_PAD_LEFT);
+                    for ($h = 0; $h < 24; $h++) {
+                        $allTimeList[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $min;
+                    }
+                } elseif (isset($event['timestamp']['hour'])) {
+                    $allTimeList[] = str_pad($event['timestamp']['hour'], 2, '0', STR_PAD_LEFT) . ':' . str_pad($event['timestamp']['minute'] ?? '00', 2, '0', STR_PAD_LEFT);
+                }
+
+                $allTimeList = array_values(array_unique($allTimeList));
+                sort($allTimeList, SORT_STRING); // Ordenação cronológica estrita
+                $event['all_hours_sorted'] = $allTimeList;
+
+                $filteredEvents[] = $event;
             }
         }
+
+        // Ordena os eventos: Ativos primeiro, Inativos no final. Dentro de cada grupo, em ordem alfabética (A-Z)
+        usort($filteredEvents, function($a, $b) {
+            $aEnabled = !empty($a['enabled']);
+            $bEnabled = !empty($b['enabled']);
+
+            if ($aEnabled !== $bEnabled) {
+                return $aEnabled ? -1 : 1;
+            }
+
+            return strcasecmp($a['name'], $b['name']);
+        });
         
-        return view('events_details', ['events' => $validEvents, 'title' => $title]);
+        return view('events_details', [
+            'events' => $filteredEvents,
+            'title' => $title,
+            'isAdmin' => $isAdmin
+        ]);
     }
 
     public function getEventSchedule()
     {
-        $eventsFolderPath = 'C:\MuServer\Data\Event';
-        $invasionManagerPath = $eventsFolderPath . '\InvasionManager.dat';
-        $lines = file($invasionManagerPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $events = [
-            0 => "Skeleton King",
-            1 => "Red Dragon",
-            2 => "Golden Dragon",
-            3 => "White Wizard",
-            4 => "Ano Novo",
-            5 => "Coelhos",
-            6 => "Verão",
-            7 => "Natal",
-            8 => "Medusa",
-            9 => "Hydra",
-            10 => "Erohim",
-            11 => "Zaikan",
-            12 => "Custom 1", // No corresponding line, could be added if necessary
-            13 => "Narcondra",
-            14 => "Grand Wizard",
-            15 => "Cavalry Captain",
-            16 => "Quartermaster",
-            17 => "Combat Instructor",
-            18 => "Knight Commander",
-            19 => "Master Assassin",
-            20 => "Kundun K7"
-        ];
-        $timestamps = [];
-        $enabledEvents = [];
-        foreach ($events as $index => $event) {
-            if (!isset($enabledEvents[$index])) {
-                $enabledEvents[$index] = [
-                    'enabled' => false
-                ];
-            }
-            if (!isset($timestamps[$index])) {
-                $timestamps[$index] = [
-                    null
-                ];
-            }
-        }
-        $inSection0 = false;
-        $inSection1 = false;
-        $daysOfWeek = ['*', 'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-
-        foreach ($lines as $index => $line) {
-            $trimmedLine = trim($line);
-            if (preg_match('/^\d+$/', $trimmedLine)) {
-                $currentSection = intval($trimmedLine); // Set the current section
-                continue;
-            }
-            if ($trimmedLine === 'end') {
-                $currentSection = null; // Reset section tracking
-                continue;
-            }
-            if (strpos($trimmedLine, '//') === 0) {
-                continue;
-            }
-            if ($currentSection === 0) {
-                $parts = preg_split('/\s+/', $trimmedLine);
-
-                if (count($parts) >= 8) {
-                    $index = $parts[0];
-                    $year = $parts[1];
-                    $month = $parts[2];
-                    $day = $parts[3];
-                    $dow = $parts[4];
-                    $hour = $parts[5];
-                    $minute = $parts[6];
-                    $second = $parts[7];
-
-                    if (!is_numeric($index)) {
-                        continue;
-                    }
-
-                    $timestamps[$index] = [
-                        'index' => $index,
-                        'year' => $year,
-                        'month' => $month,
-                        'day' => $day,
-                        'dow' => $daysOfWeek[$dow] ?? '*',
-                        'hour' => $hour,
-                        'minute' => $minute,
-                        'second' => $second
-                    ];
-                }
-            }
-            if ($currentSection === 1) {
-                $parts = preg_split('/\s+/', $trimmedLine);
-                $eventIndex = intval($parts[0]); // The first column is the index
-
-                // Check if the event index exists in $events
-                if (isset($events[$eventIndex])) {
-                    if ($events[$eventIndex] != str_replace('"', '', $parts[1])) {
-                        $eventName = str_ends_with($parts[2], '"') ? (str_replace('"', '', $parts[1]) . ' ' . str_replace('"', '', $parts[2])) : str_replace('"', '', $parts[1]);
-                        $events[$eventIndex] = $eventName;
-                    }
-                    $enabledEvents[$eventIndex] = [
-                        'enabled' => true
-                    ];
-                }
-            }
-        }
-        $eventData = [];
-        foreach ($events as $index => $event) {
-            $enabledValue = $enabledEvents[$index];
-            $isEnabled = $enabledValue['enabled'];
-            $timestamp = $timestamps[$index];
-            if (isset($timestamp['dow'])) {
-                $ddow = $timestamp['dow'];
-            }
-            $eventData[] = [
-                'name' => $events[$index] ?? 'Unknown Event',
-                'timestamp' => $timestamp,
-                'enabled' => $isEnabled,
-                'dow' => $ddow
-            ];
-        }
-        // dd($eventData);
-        return $eventData;
+        return \App\Services\EventScheduleService::getAllEvents();
     }
     public function loadEvents()
     {
         $eventData = $this->getEvents();
-        
-        usort($eventData, function($a, $b) {
-            if ($a['enabled'] == $b['enabled']) {
-                if ($a['time'] === $b['time']) return 0;
-                if ($a['time'] === null) return 1;
-                if ($b['time'] === null) return -1;
-                return $a['time'] < $b['time'] ? -1 : 1;
+        $isAdmin = Auth::check() && Auth::user()->global_admin == 1;
+
+        // Filtra para exibição no menu lateral: Admin vê todos, jogadores vêem apenas os ativos com horário
+        $displayEvents = [];
+        foreach ($eventData as $item) {
+            if ($isAdmin || ($item['enabled'] && $item['time'] !== null)) {
+                $displayEvents[] = $item;
             }
-            return $a['enabled'] ? -1 : 1;
+        }
+        
+        // Ordena por: primeiro os que têm tempo calculado menor até abrir; inativos/sem data ao final
+        usort($displayEvents, function($a, $b) {
+            if ($a['enabled'] !== $b['enabled']) {
+                return $a['enabled'] ? -1 : 1;
+            }
+            if ($a['seconds_until'] === null && $b['seconds_until'] === null) return 0;
+            if ($a['seconds_until'] === null) return 1;
+            if ($b['seconds_until'] === null) return -1;
+            return $a['seconds_until'] <=> $b['seconds_until'];
         });
         
         return view('partials.events', [
-            'eventData' => $eventData,
+            'eventData' => $displayEvents,
         ]);
     }
+
     public function getEvents()
     {
         $schedule = $this->getEventSchedule();
         $data = [];
-        $now = now()->toArray();
+        $now = now();
+        $currentDow = $now->dayOfWeek; // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+
+        $dayMap = [
+            'domingo' => 0,
+            'segunda-feira' => 1,
+            'terça-feira' => 2,
+            'quarta-feira' => 3,
+            'quinta-feira' => 4,
+            'sexta-feira' => 5,
+            'sábado' => 6,
+        ];
 
         foreach ($schedule as $event) {
-            if (isset($event['name'])) {
-                if (isset($event['timestamp']) && isset($event['timestamp']['hour']) && isset($event['timestamp']['minute'])) {
-                    $hour = $event['timestamp']['hour'];
-                    $minute = $event['timestamp']['minute'];
+            if (!isset($event['name'])) {
+                continue;
+            }
 
-                    if ($hour === '*') {
-                        if ($minute > $now['minute']) {
-                            $hour = $now['hour'];
-                        } else {
-                            $hour = ($now['hour'] + 1) % 24;
+            if (isset($event['timestamp']) && isset($event['timestamp']['hour']) && isset($event['timestamp']['minute'])) {
+                $hour = $event['timestamp']['hour'];
+                $minute = $event['timestamp']['minute'];
+                $dow = $event['dow'] ?? '*';
+
+                if ($hour === '*') {
+                    if ((int)$minute > $now->minute) {
+                        $hour = $now->hour;
+                    } else {
+                        $hour = ($now->hour + 1) % 24;
+                    }
+                }
+
+                $h = (int) $hour;
+                $m = (int) $minute;
+                $formattedTime = str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . str_pad($m, 2, '0', STR_PAD_LEFT);
+
+                // Identifica todos os dias e horários possíveis configurados para este evento
+                $candidatePairs = [];
+                if (!empty($event['all_schedules'])) {
+                    foreach ($event['all_schedules'] as $sch) {
+                        $candidatePairs[] = [
+                            'dow' => $sch['dow'] ?? '*',
+                            'hour' => $sch['hour'] ?? '*',
+                            'minute' => $sch['minute'] ?? '0',
+                        ];
+                    }
+                } else {
+                    $candidateHours = !empty($event['all_hours']) ? $event['all_hours'] : [$formattedTime];
+                    foreach ($candidateHours as $candTime) {
+                        $candParts = explode(':', $candTime);
+                        if (count($candParts) === 2) {
+                            $candidatePairs[] = [
+                                'dow' => $dow,
+                                'hour' => $candParts[0],
+                                'minute' => $candParts[1],
+                            ];
                         }
                     }
-
-                    $hour = str_pad($hour, 2, '0', STR_PAD_LEFT);
-                    $minute = str_pad($minute, 2, '0', STR_PAD_LEFT);
-
-                    $data[] = [
-                        'event' => $event['name'],
-                        'time' => $hour . ':' . $minute,
-                        'enabled' => $event['enabled'],
-                        'dow' => $event['dow']
-                    ];
-                } else {
-                    $data[] = [
-                        'event' => $event['name'],
-                        'time' => null,
-                        'enabled' => false,
-                    ];
                 }
+
+                $bestSecondsUntil = null;
+                $bestTimeFormatted = $formattedTime;
+
+                foreach ($candidatePairs as $pair) {
+                    $candH = $pair['hour'];
+                    $candM = (int) $pair['minute'];
+                    $pairDow = $pair['dow'];
+
+                    if ($candH === '*') {
+                        if ($candM > $now->minute) {
+                            $candH = $now->hour;
+                        } else {
+                            $candH = ($now->hour + 1) % 24;
+                        }
+                    } else {
+                        $candH = (int) $candH;
+                    }
+
+                    // Pode ter múltiplos dias se pairDow for separado por vírgula
+                    $dowList = array_map('trim', explode(',', $pairDow));
+                    foreach ($dowList as $singleDow) {
+                        $candTarget = $now->copy()->setTime($candH, $candM, 0);
+                        $cleanDow = strtolower(trim((string)$singleDow));
+
+                        if (isset($dayMap[$cleanDow])) {
+                            $targetDow = $dayMap[$cleanDow];
+                            $daysAhead = ($targetDow - $currentDow + 7) % 7;
+                            if ($daysAhead > 0) {
+                                $candTarget->addDays($daysAhead);
+                            } elseif ($candTarget->isPast()) {
+                                $candTarget->addDays(7);
+                            }
+                        } else {
+                            if ($candTarget->isPast()) {
+                                $candTarget->addDay();
+                            }
+                        }
+
+                        $diffSec = $now->diffInSeconds($candTarget, false);
+                        if ($diffSec < 0) $diffSec = 0;
+
+                        if ($bestSecondsUntil === null || $diffSec < $bestSecondsUntil) {
+                            $bestSecondsUntil = $diffSec;
+                            $bestTimeFormatted = str_pad($candH, 2, '0', STR_PAD_LEFT) . ':' . str_pad($candM, 2, '0', STR_PAD_LEFT);
+                        }
+                    }
+                }
+
+                $data[] = [
+                    'event' => $event['name'],
+                    'time' => $bestTimeFormatted,
+                    'enabled' => !empty($event['enabled']),
+                    'dow' => $dow,
+                    'category' => $event['category'] ?? 'Evento',
+                    'seconds_until' => $bestSecondsUntil,
+                ];
+            } else {
+                $data[] = [
+                    'event' => $event['name'],
+                    'time' => null,
+                    'enabled' => !empty($event['enabled']),
+                    'dow' => '*',
+                    'category' => $event['category'] ?? 'Evento',
+                    'seconds_until' => null,
+                ];
             }
         }
         return $data;
