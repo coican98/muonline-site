@@ -58,16 +58,39 @@ document.addEventListener('DOMContentLoaded', function () {
         if (countdownTimer) window.clearInterval(countdownTimer);
         const render = () => {
             const now = new Date();
-            document.querySelectorAll('.event-item').forEach(event => {
+            const tableBody = document.querySelector('.event-list table tbody') || document.querySelector('.event-list table');
+            const items = Array.from(document.querySelectorAll('.event-item'));
+
+            items.forEach(event => {
                 const timestamp = event.querySelector('.event-timestamp');
                 const remaining = event.querySelector('.event-remaining');
                 if (!timestamp || !remaining || !timestamp.dataset.hour) return;
 
                 const eventTime = getNextEventTime(timestamp.dataset.hour, timestamp.dataset.dow, now);
+                const remainingMs = eventTime - now;
                 const remainingTime = calculateRemainingTime(eventTime, now);
+
                 remaining.textContent = remainingTime;
                 remaining.classList.toggle('event-imminent', remainingTime !== '00:00:00' && remainingTime !== 'N/A' && isLessThanTenMinutes(remainingTime));
+                event.dataset.remainingMs = remainingMs > 0 ? remainingMs : 0;
             });
+
+            // Reordena no DOM: Ativos primeiro ordenados por tempo restante (menor primeiro), inativos ao final
+            if (tableBody && items.length > 1) {
+                items.sort((a, b) => {
+                    const enabledA = a.dataset.enabled === '1' ? 1 : 0;
+                    const enabledB = b.dataset.enabled === '1' ? 1 : 0;
+
+                    if (enabledA !== enabledB) {
+                        return enabledB - enabledA; // Ativos (1) vêm antes de inativos (0)
+                    }
+
+                    const msA = parseFloat(a.dataset.remainingMs) || 999999999;
+                    const msB = parseFloat(b.dataset.remainingMs) || 999999999;
+                    return msA - msB;
+                });
+                items.forEach(item => tableBody.appendChild(item));
+            }
         };
 
         render();
@@ -79,18 +102,30 @@ document.addEventListener('DOMContentLoaded', function () {
         const parts = eventTimestamp.split(':');
         if (parts.length < 2) return currentTime;
         const [hour, minute] = parts.map(Number);
-        const eventDate = new Date(currentTime);
-        eventDate.setHours(hour, minute, 0, 0);
 
         const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
-        const targetDay = dayNames.indexOf((eventDay || '').toLowerCase());
-        if (targetDay >= 0) {
-            eventDate.setDate(eventDate.getDate() + ((targetDay - eventDate.getDay() + 7) % 7));
+        const configuredDays = (eventDay || '').split(',').map(d => d.trim().toLowerCase());
+
+        let earliestDate = null;
+
+        for (const singleDay of configuredDays) {
+            const eventDate = new Date(currentTime);
+            eventDate.setHours(hour, minute, 0, 0);
+
+            const targetDay = dayNames.indexOf(singleDay);
+            if (targetDay >= 0) {
+                eventDate.setDate(eventDate.getDate() + ((targetDay - eventDate.getDay() + 7) % 7));
+            }
+            if (eventDate <= currentTime) {
+                eventDate.setDate(eventDate.getDate() + (targetDay >= 0 ? 7 : 1));
+            }
+
+            if (!earliestDate || eventDate < earliestDate) {
+                earliestDate = eventDate;
+            }
         }
-        if (eventDate <= currentTime) {
-            eventDate.setDate(eventDate.getDate() + (targetDay >= 0 ? 7 : 1));
-        }
-        return eventDate;
+
+        return earliestDate || currentTime;
     }
 
     function calculateRemainingTime(eventTime, now) {
