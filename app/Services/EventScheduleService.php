@@ -6,20 +6,20 @@ class EventScheduleService
 {
     /**
      * Mapeamento de dias da semana (Padrão MuOnline / X-Team)
-     * Crywolf: 1 = Domingo, 2 = Segunda, 3 = Terça, 4 = Quarta, 5 = Quinta, 6 = Sexta, 7 = Sábado
-     * (E também aceita padrão 0-6: 0 = Domingo, 1 = Segunda, etc.)
+     * 1 = Domingo, 2 = Segunda, 3 = Terça, 4 = Quarta, 5 = Quinta, 6 = Sexta, 7 = Sábado
+     * (E 0 também aceito como Domingo caso algum arquivo legado use 0)
      */
     public static array $daysOfWeek = [
         '*' => '*',
         '-1' => '*',
         '0' => 'Domingo',
-        '1' => 'Segunda-feira', // No padrão 0-6
-        '2' => 'Terça-feira',
-        '3' => 'Quarta-feira',
-        '4' => 'Quinta-feira',
-        '5' => 'Sexta-feira',
-        '6' => 'Sábado',
-        '7' => 'Sábado', // No padrão 1-7 (Crywolf: 4 = Quarta, 7 = Sábado)
+        '1' => 'Domingo',
+        '2' => 'Segunda-feira',
+        '3' => 'Terça-feira',
+        '4' => 'Quarta-feira',
+        '5' => 'Quinta-feira',
+        '6' => 'Sexta-feira',
+        '7' => 'Sábado',
     ];
 
     /**
@@ -143,16 +143,22 @@ class EventScheduleService
 
             $parts = preg_split('/\s+/', $trimmed);
 
-            // Seção 0: Horários
+            // Seção 0: Horários por Index
             if ($currentSection === 0 && count($parts) >= 8) {
                 $idx = intval($parts[0]);
+                $rawDow = trim($parts[4]);
+                $dowName = ($rawDow === '*' || $rawDow === '-1') ? 'Todos os Dias' : (self::$daysOfWeek[$rawDow] ?? $rawDow);
+                
+                $h = $parts[5];
+                $m = $parts[6];
+                
                 $timestamps[$idx] = [
                     'year' => $parts[1],
                     'month' => $parts[2],
                     'day' => $parts[3],
-                    'dow' => self::$daysOfWeek[$parts[4]] ?? '*',
-                    'hour' => $parts[5],
-                    'minute' => $parts[6],
+                    'dow' => $dowName,
+                    'hour' => $h,
+                    'minute' => $m,
                     'second' => $parts[7],
                 ];
             }
@@ -171,13 +177,34 @@ class EventScheduleService
 
         $events = [];
         foreach ($names as $idx => $name) {
-            $ts = $timestamps[$idx] ?? ['dow' => '*', 'hour' => '*', 'minute' => '*'];
+            $ts = $timestamps[$idx] ?? ['dow' => 'Todos os Dias', 'hour' => '*', 'minute' => '*'];
+            $dow = $ts['dow'] ?? 'Todos os Dias';
+            $hour = $ts['hour'] ?? '*';
+            $minute = $ts['minute'] ?? '*';
+
+            $allHours = [];
+            if ($minute !== '*') {
+                if ($hour === '*') {
+                    $allHours[] = '*:' . str_pad($minute, 2, '0', STR_PAD_LEFT);
+                } else {
+                    $allHours[] = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minute, 2, '0', STR_PAD_LEFT);
+                }
+            }
+
             $events[] = [
                 'name' => $name,
                 'category' => 'Invasão',
                 'timestamp' => $ts,
+                'all_hours' => $allHours,
+                'all_schedules' => [
+                    [
+                        'dow' => $dow,
+                        'hour' => $hour,
+                        'minute' => $minute,
+                    ]
+                ],
                 'enabled' => !empty($enabled[$idx]),
-                'dow' => $ts['dow'] ?? '*',
+                'dow' => $dow,
             ];
         }
 
