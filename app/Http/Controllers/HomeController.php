@@ -285,11 +285,16 @@ class HomeController extends Controller
 
         $CSOwner = DB::table('MuCastle_DATA')->value('OWNER_GUILD');
 
+        // Carrega notícias dinâmicas e notícia destacada no modal da página inicial
+        $recentNews = \App\Services\NewsService::getRecentForHome(3);
+        $homeModalNews = \App\Services\NewsService::getHomeModalNews();
+
         return view('home', [
             'title' => $title,
-            'CSOwner' => $CSOwner
+            'CSOwner' => $CSOwner,
+            'recentNews' => $recentNews,
+            'homeModalNews' => $homeModalNews,
         ]);
-
     }
 
     private function formatSizeUnits($bytes)
