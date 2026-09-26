@@ -24,6 +24,7 @@
             @if(Auth::check())
                 <a href="/loja" class="{{ request()->is('loja') || request()->is('vip') ? 'nav-active' : '' }}">Loja</a>
             @endif
+            <a href="/noticias" class="{{ request()->is('noticias*') ? 'nav-active' : '' }}">Notícias</a>
             <a href="/eventos" class="{{ request()->is('eventos') ? 'nav-active' : '' }}">Eventos</a>
         </nav>
     </header>
