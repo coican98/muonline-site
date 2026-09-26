@@ -139,13 +139,25 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isNaN(remainingMilliseconds)) {
             return 'N/A';
         }
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        // Se faltar mais de 24h (>= 24 horas), informa o dia da semana da próxima execução
+        if (hours >= 24) {
+            const dayNamesShort = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const nextDayName = dayNamesShort[eventTime.getDay()] || '';
+            return `${nextDayName} (${timeStr})`;
+        }
+
+        return timeStr;
     }
     
     function isLessThanTenMinutes(remainingTime) {
         if (!remainingTime || remainingTime === 'N/A') return false;
+        // Se tem o dia da semana ex: "Sáb (48:00:00)", não é menor que 10 minutos
+        if (remainingTime.includes('(')) return false;
         const parts = remainingTime.split(':');
-        if(parts.length !== 3) return false;
+        if (parts.length !== 3) return false;
         const [hours, minutes] = parts.map(Number);
         return (hours === 0 && minutes < 10);
     }
