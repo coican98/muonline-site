@@ -24,7 +24,7 @@ class VipController extends Controller
         ShopOrderService::ensureTableExists();
 
         $shopSettings = ShopOrderService::getShopSettings();
-        $packages = ShopOrderService::getPackages();
+        $packages = ShopOrderService::getPackages(true);
 
         return view('shop', [
             'shopSettings' => $shopSettings,
@@ -45,7 +45,7 @@ class VipController extends Controller
         ShopOrderService::ensureTableExists();
 
         $packageId = (int) $request->input('package_id');
-        $packages = ShopOrderService::getPackages();
+        $packages = ShopOrderService::getPackages(true);
         $selectedPackage = null;
         foreach ($packages as $pkg) {
             if ($pkg['id'] == $packageId) {
@@ -55,7 +55,7 @@ class VipController extends Controller
         }
 
         if (!$selectedPackage) {
-            return redirect()->route('shop')->with('error', 'Pacote não encontrado.');
+            return redirect()->route('shop')->with('error', 'Pacote não encontrado ou temporariamente indisponível.');
         }
 
         $user = Auth::user();
@@ -106,7 +106,7 @@ class VipController extends Controller
 
         $packageId = (int) $request->input('package_id');
         $paymentMethod = $request->input('payment_method', 'pix'); // pix | card
-        $packages = ShopOrderService::getPackages();
+        $packages = ShopOrderService::getPackages(true);
 
         $selectedPackage = null;
         foreach ($packages as $pkg) {
@@ -117,7 +117,7 @@ class VipController extends Controller
         }
 
         if (!$selectedPackage) {
-            return redirect()->route('shop')->with('error', 'Pacote não encontrado.');
+            return redirect()->route('shop')->with('error', 'Pacote não encontrado ou temporariamente indisponível.');
         }
 
         $user = Auth::user();

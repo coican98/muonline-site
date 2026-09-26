@@ -54,13 +54,21 @@ class ShopOrderService
     }
 
     /**
-     * Obtém os pacotes da loja
+     * Obtém os pacotes da loja (com filtro opcional para apenas pacotes ativos)
      */
-    public static function getPackages(): array
+    public static function getPackages(bool $activeOnly = false): array
     {
         $settingsPath = storage_path('app/settings.json');
         $settings = file_exists($settingsPath) ? json_decode(file_get_contents($settingsPath), true) : [];
-        return $settings['shop_packages'] ?? [];
+        $packages = $settings['shop_packages'] ?? [];
+
+        if ($activeOnly) {
+            return array_values(array_filter($packages, function ($pkg) {
+                return !isset($pkg['active']) || (bool) $pkg['active'] === true;
+            }));
+        }
+
+        return $packages;
     }
 
     /**

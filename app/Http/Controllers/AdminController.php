@@ -29,12 +29,15 @@ class AdminController extends Controller
             'coin3' => 0,
         ];
 
+        $newsList = \App\Services\NewsService::getAllForAdmin();
+
         return view('admin', [
             'results' => $csvData,
             'columns' => $columns,
             'shopSettings' => $shopSettings,
             'shopPackages' => $shopPackages,
             'registrationBonus' => $registrationBonus,
+            'newsList' => $newsList,
         ]);
     }
 
@@ -253,6 +256,7 @@ class AdminController extends Controller
             'coin2' => (int)$request->input('coin2', 0),
             'coin3' => (int)$request->input('coin3', 0),
             'highlight' => $request->has('highlight'),
+            'active' => $request->has('active') ? (bool)$request->input('active') : true,
         ];
 
         $packages[] = $newPackage;
@@ -281,6 +285,39 @@ class AdminController extends Controller
         file_put_contents($settingsPath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         return redirect()->back()->with('success', 'Pacote removido da Loja com sucesso!');
+    }
+
+    public function togglePackage($id)
+    {
+        if (!(Auth::check() && Auth::user()->global_admin == 1)) {
+            return redirect('/')->with('error', 'Sem acesso.');
+        }
+
+        $settingsPath = storage_path('app/settings.json');
+        $data = file_exists($settingsPath) ? json_decode(file_get_contents($settingsPath), true) : [];
+        $packages = $data['shop_packages'] ?? [];
+
+        $found = false;
+        $newState = true;
+        foreach ($packages as &$pkg) {
+            if ($pkg['id'] == $id) {
+                $currentState = !isset($pkg['active']) || (bool)$pkg['active'] === true;
+                $pkg['active'] = !$currentState;
+                $newState = $pkg['active'];
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            return redirect()->back()->with('error', 'Pacote não encontrado.');
+        }
+
+        $data['shop_packages'] = $packages;
+        file_put_contents($settingsPath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        $msg = $newState ? 'Pacote ativado com sucesso!' : 'Pacote desativado com sucesso!';
+        return redirect()->back()->with('success', $msg);
     }
 
     public function updatePackage(Request $request, $id)
@@ -315,6 +352,9 @@ class AdminController extends Controller
                 $pkg['coin2'] = (int)$request->input('coin2', 0);
                 $pkg['coin3'] = (int)$request->input('coin3', 0);
                 $pkg['highlight'] = $request->has('highlight');
+                if ($request->has('active_status_present')) {
+                    $pkg['active'] = $request->has('active');
+                }
                 $found = true;
                 break;
             }
