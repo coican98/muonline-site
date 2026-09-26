@@ -39,9 +39,20 @@ Route::post('/admin/shop/settings', [AdminController::class, 'updateShopSettings
 Route::post('/admin/registration/bonus', [AdminController::class, 'updateRegistrationBonus'])->name('admin.registration.bonus');
 Route::post('/admin/shop/packages', [AdminController::class, 'storePackage'])->name('admin.shop.package.store');
 Route::put('/admin/shop/packages/{id}', [AdminController::class, 'updatePackage'])->name('admin.shop.package.update');
+Route::post('/admin/shop/packages/{id}/toggle', [AdminController::class, 'togglePackage'])->name('admin.shop.package.toggle');
 Route::delete('/admin/shop/packages/{id}', [AdminController::class, 'deletePackage'])->name('admin.shop.package.delete');
 
 Route::get('/account', [AccountController::class, 'index'])->name('account');
 Route::post('/account/disconnect', [AccountController::class, 'disconnect'])->name('account.disconnect');
 Route::get('/account/settings', [AccountController::class, 'settings'])->name('account.settings');
 Route::put('/account/settings', [AccountController::class, 'updateSettings'])->name('account.settings.update');
+
+// Módulo de Notícias
+Route::get('/noticias', [\App\Http\Controllers\NewsController::class, 'index'])->name('news.index');
+Route::get('/noticias/{slug}', [\App\Http\Controllers\NewsController::class, 'show'])->name('news.show');
+
+// Administração de Notícias
+Route::post('/admin/news', [\App\Http\Controllers\NewsController::class, 'store'])->name('admin.news.store');
+Route::put('/admin/news/{id}', [\App\Http\Controllers\NewsController::class, 'update'])->name('admin.news.update');
+Route::post('/admin/news/{id}/toggle', [\App\Http\Controllers\NewsController::class, 'toggle'])->name('admin.news.toggle');
+Route::delete('/admin/news/{id}', [\App\Http\Controllers\NewsController::class, 'destroy'])->name('admin.news.destroy');
