@@ -1629,3 +1629,255 @@ section {
     color: var(--gold-bright);
     background: linear-gradient(180deg, #25262a 0%, #18191c 70%, #0d0d0f 100%);
 }
+
+/* ============================================================
+   MODAL DE NOTÍCIA: ANIMAÇÃO DE ENTRADA E EFEITO DE CHAMAS
+   ============================================================ */
+.news-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(4px);
+    z-index: 2500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.news-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.news-modal-flame {
+    position: relative;
+    background: linear-gradient(160deg, #18191c 0%, #101114 60%, #08080a 100%);
+    border: 2px solid #ff5a1f;
+    border-radius: 6px;
+    padding: 30px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 85vh;
+    overflow-y: auto;
+    text-align: left;
+    transform: scale(0.85) translateY(30px);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.35s ease;
+    animation: flamePulse 3s infinite alternate ease-in-out;
+}
+
+.news-modal-overlay.active .news-modal-flame {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Efeito de chamas pulsantes e brilhantes ao redor do modal */
+@keyframes flamePulse {
+    0% {
+        box-shadow:
+            0 0 15px rgba(255, 69, 0, 0.6),
+            0 0 35px rgba(255, 140, 0, 0.45),
+            0 0 65px rgba(230, 20, 0, 0.3),
+            inset 0 0 15px rgba(255, 100, 0, 0.25);
+        border-color: #ff4500;
+    }
+    35% {
+        box-shadow:
+            0 0 22px rgba(255, 90, 0, 0.75),
+            0 0 50px rgba(255, 160, 20, 0.55),
+            0 0 85px rgba(210, 30, 0, 0.38),
+            inset 0 0 22px rgba(255, 120, 0, 0.3);
+        border-color: #ff6a00;
+    }
+    70% {
+        box-shadow:
+            0 0 18px rgba(255, 45, 0, 0.7),
+            0 0 42px rgba(255, 120, 0, 0.5),
+            0 0 75px rgba(240, 50, 0, 0.35),
+            inset 0 0 18px rgba(255, 80, 0, 0.28);
+        border-color: #ff3c00;
+    }
+    100% {
+        box-shadow:
+            0 0 28px rgba(255, 110, 0, 0.85),
+            0 0 60px rgba(255, 175, 30, 0.65),
+            0 0 95px rgba(255, 30, 0, 0.45),
+            inset 0 0 25px rgba(255, 140, 0, 0.35);
+        border-color: #ffa500;
+    }
+}
+
+/* ============================================================
+   ESTILOS PARA O CONTEÚDO HTML DAS NOTÍCIAS
+   ============================================================ */
+.news-body-content {
+    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.news-body-content p {
+    margin-bottom: 1.1em;
+}
+
+.news-body-content strong,
+.news-body-content b {
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+
+.news-body-content em,
+.news-body-content i {
+    color: #f1f5f9;
+    font-style: italic;
+}
+
+.news-body-content u {
+    text-decoration: underline;
+    text-decoration-color: var(--gold);
+}
+
+.news-body-content h1,
+.news-body-content h2,
+.news-body-content h3,
+.news-body-content h4 {
+    color: var(--gold-bright);
+    font-family: var(--font-display);
+    margin: 1.2em 0 0.5em;
+    letter-spacing: 0.5px;
+}
+
+.news-body-content h1 { font-size: 1.6em; border-bottom: 1px solid rgba(201,166,90,0.3); padding-bottom: 6px; }
+.news-body-content h2 { font-size: 1.4em; }
+.news-body-content h3 { font-size: 1.2em; }
+
+.news-body-content ul,
+.news-body-content ol {
+    margin: 0.8em 0 1.2em 1.5em;
+    padding-left: 10px;
+}
+
+.news-body-content ul li {
+    list-style-type: square;
+    margin-bottom: 0.4em;
+    color: var(--steel);
+}
+
+.news-body-content ol li {
+    list-style-type: decimal;
+    margin-bottom: 0.4em;
+    color: var(--steel);
+}
+
+.news-body-content a {
+    color: var(--gold);
+    text-decoration: underline;
+    transition: color var(--transition-fast);
+}
+
+.news-body-content a:hover {
+    color: var(--gold-bright);
+}
+
+.news-body-content blockquote {
+    background: rgba(201, 166, 90, 0.08);
+    border-left: 4px solid var(--blood);
+    padding: 10px 18px;
+    margin: 15px 0;
+    color: #e2e8f0;
+    font-style: italic;
+}
+
+.news-body-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid rgba(201, 166, 90, 0.3);
+    margin: 12px 0;
+}
+
+/* ============================================================
+   ADMIN: NAVEGAÇÃO INTERNA EM ABAS
+   ============================================================ */
+.admin-tabs-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: rgba(14, 15, 17, 0.85);
+    border: 1px solid rgba(201, 166, 90, 0.25);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+}
+
+.admin-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--steel);
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.admin-tab-btn i {
+    font-size: 14px;
+    color: var(--gold);
+    transition: color var(--transition-fast);
+}
+
+.admin-tab-btn:hover {
+    color: var(--gold-bright);
+    background: rgba(201, 166, 90, 0.1);
+    border-color: rgba(201, 166, 90, 0.3);
+}
+
+.admin-tab-btn.active {
+    background: linear-gradient(180deg, #222328 0%, #151619 100%);
+    border-color: var(--gold);
+    border-bottom: 2px solid var(--gold-bright);
+    color: var(--gold-bright);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.admin-tab-btn.active i {
+    color: #ff6a00;
+    text-shadow: 0 0 8px rgba(255, 106, 0, 0.6);
+}
+
+.admin-tab-pane {
+    display: none;
+    animation: adminTabFade 0.25s ease-out;
+}
+
+.admin-tab-pane.active {
+    display: block;
+}
+
+@keyframes adminTabFade {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
